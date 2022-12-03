@@ -8,9 +8,10 @@ import {
   useRootStore,
 } from "@huddle01/huddle01-client";
 import PeerVideoAudioElem from "./components/PeerVideoAudioElem";
+import { ethers } from "ethers";
 
 function App() {
-  const huddleClient = getHuddleClient("YOUR_API_KEY");
+  const huddleClient = getHuddleClient("db4e20e2145d9113445924d230ebd5e8c260ab3380177bc1f9dbe0dd10876c05");
   const stream = useRootStore((state) => state.stream);
   const enableStream = useRootStore((state) => state.enableStream);
   const pauseTracks = useRootStore((state) => state.pauseTracks);
@@ -19,11 +20,12 @@ function App() {
   const peerId = useRootStore((state) => state.peerId);
   const lobbyPeers = useRootStore((state) => state.lobbyPeers);
   const roomState = useRootStore((state) => state.roomState);
+  const [walletAddress, setWalletAddress] = useState("");
 
   const handleJoin = async () => {
     try {
-      await huddleClient.join("dev ", {
-        address: "0x15900c698ee356E6976e5645394F027F0704c8Eb",
+      await huddleClient.join("shantanu12345", {
+        address: "0x5c76080541945376ba10e72350e41dbb7786CB13",
         wallet: "",
         ens: "axit.eth",
       });
@@ -45,6 +47,34 @@ function App() {
   useEffect(() => {
     console.log({ peers: Object.values(peers), peerId, isCamPaused });
   }, [peers, peerId, isCamPaused]);
+
+  async function requestAccount() {
+    console.log("Requesting account...");
+
+    // Check if metamask exists
+    if(window.ethereum){
+      console.log('detected');
+
+      try {
+        const accounts = await window.ethereum.request({
+          method: "eth_requestAccounts",
+        });
+        setWalletAddress(accounts[0]);
+      } catch (error) {
+        console.log('Error connecting...');
+      }
+    } else {
+      console.log('Metamask not detected');
+    }
+  }
+
+  async function connectWallet() {
+    if(typeof window.ethereum !== 'undefined'){
+      await requestAccount();
+
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+    }
+  }
 
   return (
     <HuddleClientProvider value={huddleClient}>
@@ -85,6 +115,8 @@ function App() {
 
         <div>
           <div className="card">
+            <button onClick={requestAccount}>Connect Wallet</button>
+            <h3>Wallet Address: {walletAddress}</h3>
             <button onClick={handleJoin}>Join Room</button>
             <button onClick={() => enableStream()}>Enable Stream</button>
             <button onClick={() => pauseTracks()}>Disable Stream</button>
